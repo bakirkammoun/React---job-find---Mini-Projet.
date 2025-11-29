@@ -1,247 +1,209 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Context } from "../../main";
 
+const JOBS_PER_PAGE = 9;
+
 const Jobs = () => {
-  const [allJobs, setAllJobs] = useState([]); // Store all jobs
-  const [filteredJobs, setFilteredJobs] = useState([]); // Jobs to display
+  const [allJobs, setAllJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const { isAuthorized } = useContext(Context);
   const navigateTo = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const handleSearch = async (query = searchQuery) => {
+    const searchTerm = query.trim();
+    if (searchTerm === "") {
+      setFilteredJobs(allJobs);
+      return;
+    }
+    try {
+      const res = await axios.get(
+        `http://localhost:4000/api/v1/job/jobs/search?title=${searchTerm}`,
+        { withCredentials: true }
+      );
+      setFilteredJobs(res.data.jobs || []);
+    } catch (error) {
+      console.error(error);
+      setFilteredJobs([]);
+    }
+  };
 
   useEffect(() => {
-    // Fetch all jobs initially
     const fetchJobs = async () => {
       try {
         const res = await axios.get("http://localhost:4000/api/v1/job/getall", {
           withCredentials: true,
         });
-        setAllJobs(res.data.jobs); // Save all jobs
-        setFilteredJobs(res.data.jobs); // Initially, display all jobs
+        setAllJobs(res.data.jobs || []);
+        setFilteredJobs(res.data.jobs || []);
       } catch (error) {
         console.error(error);
+        setAllJobs([]);
+        setFilteredJobs([]);
       }
     };
 
     fetchJobs();
   }, []);
 
-  const handleSearch = async () => {
-    if (searchQuery.trim() === "") {
-      // If search query is empty, reset to show all jobs
-      setFilteredJobs(allJobs);
-    } else {
-      try {
-        // Make GET request to search endpoint
-        const res = await axios.get(
-          `http://localhost:4000/api/v1/job/jobs/search?title=${searchQuery}`,
-          { withCredentials: true }
-        );
-        console.log(res.data.jobs);
-        
-        setFilteredJobs(res.data.jobs); // Update displayed jobs
-      } catch (error) {
-        console.error(error);
-        setFilteredJobs([]); // Clear the list if an error occurs
+  // Handle search parameter from URL
+  useEffect(() => {
+    const searchParam = searchParams.get("search");
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      // Trigger search after jobs are loaded
+      if (allJobs.length > 0) {
+        handleSearch(searchParam);
       }
     }
+  }, [searchParams, allJobs]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === "" && !searchParams.get("search")) {
+      setFilteredJobs(allJobs);
+    }
+  }, [searchQuery, allJobs, searchParams]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredJobs]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredJobs.length / JOBS_PER_PAGE) || 1
+  );
+  const paginatedJobs = useMemo(() => {
+    const startIndex = (currentPage - 1) * JOBS_PER_PAGE;
+    return filteredJobs.slice(startIndex, startIndex + JOBS_PER_PAGE);
+  }, [filteredJobs, currentPage]);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
   };
-  
+
+  const renderSalary = (job) => {
+    if (job.fixedSalary) {
+      return `$${job.fixedSalary}`;
+    }
+    if (job.salaryFrom && job.salaryTo) {
+      return `$${job.salaryFrom} - $${job.salaryTo}`;
+    }
+    return "Salary not specified";
+  };
 
   if (!isAuthorized) {
     navigateTo("/");
   }
 
   return (
-    <section
-      className="jobs page"
-      style={{
-        backgroundImage: "url('/background.jpg')",
-        backgroundPosition: "center",
-        backgroundSize: "cover",
-        backgroundAttachment: "fixed",
-        backgroundRepeat: "no-repeat",
-        padding: "50px 0",
-        fontFamily: "Arial, sans-serif",
-        minHeight: "100vh",
-      }}
-    >
-      <div
-        className="container"
-        style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "0 20px",
-        }}
-      >
-        <h1
-          style={{
-            textAlign: "center",
-            fontSize: "55px",
-            color: "#fff",
-            marginBottom: "40px",
-          }}
-        >
-          ALL AVAILABLE JOBS
-        </h1>
+    <section className="jobs page">
+      <div className="container">
+        <div className="jobs__header">
+          <p>Explore opportunities</p>
+          <h1>All Available Jobs</h1>
+          <span>
+            {filteredJobs.length}{" "}
+            {filteredJobs.length === 1 ? "role matches" : "roles match"} your
+            search
+          </span>
+        </div>
 
-        {/* Search Input */}
-        <div
-          className="search-bar"
-          style={{
-            marginBottom: "20px",
-            textAlign: "center",
-          }}
-        >
+        <div className="jobs__search">
           <input
             type="text"
             placeholder="Search jobs by title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: "100%",
-              maxWidth: "400px",
-              padding: "10px",
-              fontSize: "18px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-              outline: "none",
-            }}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
-          <button
-            onClick={handleSearch}
-            style={{
-              marginLeft: "10px",
-              padding: "10px 20px",
-              fontSize: "18px",
-              backgroundColor: "#ffb700",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Search
-          </button>
+          <button onClick={() => handleSearch()}>Search</button>
         </div>
 
-        <div
-          className="jobs-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          {filteredJobs.length > 0 ? (
-            filteredJobs.map((element) => (
-              <div
-                className="job-card"
-                key={element._id}
-                style={{
-                  position: "relative",
-                  backgroundImage: "url('/cardd.jpg')",
-                  backgroundPosition: "center",
-                  backgroundSize: "cover",
-                  backgroundRepeat: "no-repeat",
-                  width: "500px",
-                  height: "660px",
-                  borderTopLeftRadius: "16px",
-                  borderTopRightRadius: "16px",
-                  borderBottomLeftRadius: "250px",
-                  borderBottomRightRadius: "250px",
-                  overflow: "hidden",
-                  color: "white",
-                  textAlign: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "flex-end",
-                }}
-              >
-                <div
-                  className="job-card-content"
-                  style={{
-                    background: "rgba(0, 0, 0, 0.5)",
-                    padding: "10px",
-                    height: "100%",
-                    borderRadius: "16px",
-                  }}
-                >
-                  <img
-                    src="/logos.png"
-                    alt="Logo"
-                    style={{
-                      width: "280px",
-                      height: "280px",
-                      objectFit: "contain",
-                      margin: "0 auto 20px",
-                    }}
-                  />
-                  <h2
-                    className="job-title"
-                    style={{
-                      fontSize: "50px",
-                      fontWeight: "bold",
-                      marginTop: "10px",
-                    }}
-                  >
-                    {element.title}
-                  </h2>
-                  <p
-                    className="job-category"
-                    style={{
-                      fontSize: "35px",
-                      color: "#ccc",
-                    }}
-                  >
-                    {element.category}
-                  </p>
-                  <p
-                    className="job-location"
-                    style={{
-                      fontSize: "30px",
-                      color: "#bbb",
-                    }}
-                  >
-                    {element.country}, {element.city}
-                  </p>
-                  <Link
-                    className="job-details-link"
-                    to={`/job/${element._id}`}
-                    style={{
-                      marginTop: "42px",
-                      display: "inline-block",
-                      textDecoration: "none",
-                      color: "#ffb700",
-                      border: "2px solid #ffb700",
-                      padding: "10px 20px",
-                      width: "273px",
-                      borderRadius: "20px",
-                      transition: "all 0.3s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#ffb700";
-                      e.currentTarget.style.color = "white";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.color = "#ffb700";
-                    }}
-                  >
-                    Job Details
-                  </Link>
+        {paginatedJobs.length > 0 ? (
+          <div className="jobs__grid">
+            {paginatedJobs.map((job) => (
+              <article className="job_listing_card" key={job._id}>
+                <div className="job_listing_card__badge">
+                  {job.category || "General"}
                 </div>
-              </div>
-            ))
-          ) : (
-            <p style={{ color: "white", textAlign: "center" }}>
-              No jobs found matching the search query.
-            </p>
-          )}
-        </div>
+                <h2>{job.title}</h2>
+                <p className="job_listing_card__location">
+                  {job.country}, {job.city}
+                </p>
+                <p className="job_listing_card__description">
+                  {job.description
+                    ? job.description.slice(0, 140) +
+                      (job.description.length > 140 ? "..." : "")
+                    : "No description provided."}
+                </p>
+                <div className="job_listing_card__meta">
+                  <span>Salary: {renderSalary(job)}</span>
+                  <span>Type: {job.jobType || "Flexible"}</span>
+                </div>
+                <div className="job_listing_card__footer">
+                  <div>
+                    <p>Posted by</p>
+                    <span>{job.companyName || "CareerConnect"}</span>
+                  </div>
+                  <Link to={`/job/${job._id}`}>View details</Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty_state jobs__empty">
+            <p>No jobs found.</p>
+            <span>Try adjusting your search to discover new roles.</span>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPrev={() => handlePageChange(currentPage - 1)}
+            onNext={() => handlePageChange(currentPage + 1)}
+            onSelectPage={handlePageChange}
+          />
+        )}
       </div>
     </section>
+  );
+};
+
+const PaginationControls = ({
+  currentPage,
+  totalPages,
+  onPrev,
+  onNext,
+  onSelectPage,
+}) => {
+  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  return (
+    <div className="pagination_controls">
+      <button onClick={onPrev} disabled={currentPage === 1}>
+        Previous
+      </button>
+      <div className="pagination_numbers">
+        {pages.map((page) => (
+          <button
+            key={page}
+            className={`page_number ${page === currentPage ? "active" : ""}`}
+            onClick={() => onSelectPage(page)}
+          >
+            {page}
+          </button>
+        ))}
+      </div>
+      <button onClick={onNext} disabled={currentPage === totalPages}>
+        Next
+      </button>
+    </div>
   );
 };
 

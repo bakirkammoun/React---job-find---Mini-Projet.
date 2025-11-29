@@ -73,21 +73,35 @@ const PostJob = () => {
   }
 
   return (
-    <>
-      <div className="job_post page">
-        <div className="container">
-          <h3>POST NEW JOB</h3>
-          <form onSubmit={handleJobPost}>
-            <div className="wrapper">
+    <section className="job_post page">
+      <div className="container">
+        <div className="job_post__header">
+          <p>Share your next opening</p>
+          <h1>Post a new job</h1>
+          <span>
+            Tell top candidates about the role, location, and compensation so
+            they know if it is a match right away.
+          </span>
+        </div>
+
+        <form className="job_post__form" onSubmit={handleJobPost}>
+          <div className="job_post__grid">
+            <div className="field_group">
+              <label>Job Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Job Title"
+                placeholder="e.g. Senior Frontend Engineer"
+                required
               />
+            </div>
+            <div className="field_group">
+              <label>Category</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                required
               >
                 <option value="">Select Category</option>
                 <option value="Graphics & Design">Graphics & Design</option>
@@ -114,27 +128,40 @@ const PostJob = () => {
                 <option value="Data Entry Operator">Data Entry Operator</option>
               </select>
             </div>
-            <div className="wrapper">
+            <div className="field_group">
+              <label>Country</label>
               <input
                 type="text"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                placeholder="Country"
+                placeholder="e.g. France"
+                required
               />
+            </div>
+            <div className="field_group">
+              <label>City</label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="City"
+                placeholder="e.g. Paris"
+                required
               />
             </div>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Location"
-            />
-            <div className="salary_wrapper">
+            <div className="field_group location_field">
+              <label>Office / Remote Details</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Headquarters or remote policy"
+              />
+            </div>
+          </div>
+
+          <div className="job_post__salary">
+            <div className="field_group">
+              <label>Salary Type</label>
               <select
                 value={salaryType}
                 onChange={(e) => setSalaryType(e.target.value)}
@@ -143,45 +170,59 @@ const PostJob = () => {
                 <option value="Fixed Salary">Fixed Salary</option>
                 <option value="Ranged Salary">Ranged Salary</option>
               </select>
-              <div>
-                {salaryType === "default" ? (
-                  <p>Please provide Salary Type *</p>
-                ) : salaryType === "Fixed Salary" ? (
+            </div>
+            <div className="salary_inputs">
+              {salaryType === "default" && (
+                <p className="salary_hint">Please select a salary type.</p>
+              )}
+              {salaryType === "Fixed Salary" && (
+                <input
+                  type="number"
+                  placeholder="Enter fixed salary"
+                  value={fixedSalary}
+                  onChange={(e) => setFixedSalary(e.target.value)}
+                  required
+                />
+              )}
+              {salaryType === "Ranged Salary" && (
+                <div className="salary_range">
                   <input
                     type="number"
-                    placeholder="Enter Fixed Salary"
-                    value={fixedSalary}
-                    onChange={(e) => setFixedSalary(e.target.value)}
+                    placeholder="Min salary"
+                    value={salaryFrom}
+                    onChange={(e) => setSalaryFrom(e.target.value)}
+                    required
                   />
-                ) : (
-                  <div className="ranged_salary">
-                    <input
-                      type="number"
-                      placeholder="Salary From"
-                      value={salaryFrom}
-                      onChange={(e) => setSalaryFrom(e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      placeholder="Salary To"
-                      value={salaryTo}
-                      onChange={(e) => setSalaryTo(e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
+                  <span>to</span>
+                  <input
+                    type="number"
+                    placeholder="Max salary"
+                    value={salaryTo}
+                    onChange={(e) => setSalaryTo(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
             </div>
+          </div>
+
+          <div className="field_group">
+            <label>Description</label>
             <textarea
               rows="10"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Job Description"
+              placeholder="Describe responsibilities, requirements, and perks."
+              required
             />
+          </div>
+
+          <div className="job_post__actions">
             <button type="submit">Create Job</button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
-    </>
+    </section>
   );
 };
 

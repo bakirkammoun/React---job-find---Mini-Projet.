@@ -33,67 +33,85 @@ const Login = () => {
       setRole("");
       setIsAuthorized(true);
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Connexion impossible.");
     }
   };
 
-  if(isAuthorized){
-    return <Navigate to={'/'}/>
+  if (isAuthorized) {
+    return <Navigate to={"/"} />;
   }
 
   return (
     <>
-      <section className="authPage">
-        <div className="container">
-          <div className="header">
-            <img src="/careerconnect-black.png" alt="logo" />
-            <h3>Login to your account</h3>
+      <section className="authSplit authSplit--bg">
+        <div className="authSplit__card">
+          <div className="authSplit__header">
+            <img src="/careerconnect-black.png" alt="CareerConnect" />
+            <div>
+              <p className="eyebrow">Bienvenue</p>
+              <h2>Heureux de vous revoir !</h2>
+              <span>Reprenez vos candidatures et messages en toute simplicité.</span>
+            </div>
           </div>
-          <form>
-            <div className="inputTag">
-              <label>Login As</label>
-              <div>
-                <select value={role} onChange={(e) => setRole(e.target.value)}>
-                  <option value="">Select Role</option>
-                  
-                  <option value="Job Seeker">Job Seeker</option>
-                  <option value="Employer">Employer</option>
+
+          <form className="authSplit__form" onSubmit={handleLogin}>
+            <div className="inputTag inputTag--modern">
+              <label>Connexion en tant que</label>
+              <div className="inputTag__inner">
+                <span className="inputTag__icon">
+                  <FaRegUser />
+                </span>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                >
+                  <option value="">Choisir un rôle</option>
+                  <option value="Job Seeker">Candidat</option>
+                  <option value="Employer">Recruteur</option>
                 </select>
-                <FaRegUser />
               </div>
             </div>
-            <div className="inputTag">
-              <label>Email Address</label>
-              <div>
+
+            <div className="inputTag inputTag--modern">
+              <label>Adresse e-mail</label>
+              <div className="inputTag__inner">
+                <span className="inputTag__icon">
+                  <MdOutlineMailOutline />
+                </span>
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="prenom.nom@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
-                <MdOutlineMailOutline />
               </div>
             </div>
-            <div className="inputTag">
-              <label>Password</label>
-              <div>
+
+            <div className="inputTag inputTag--modern">
+              <label>Mot de passe</label>
+              <div className="inputTag__inner">
+                <span className="inputTag__icon">
+                  <RiLock2Fill />
+                </span>
                 <input
                   type="password"
-                  placeholder="Enter your Password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
-                <RiLock2Fill />
               </div>
             </div>
-            <button type="submit" onClick={handleLogin}>
-              Login
-            </button>
-            <Link to={"/register"}>Register Now</Link>
+
+            <button type="submit">Se connecter</button>
           </form>
-        </div>
-        <div className="banner">
-          <img src="/login.jpg" alt="login" />
+
+          <p className="authSplit__foot">
+            Nouveau sur CareerConnect ?{" "}
+            <Link to={"/register"}>Créer un compte</Link>
+          </p>
         </div>
       </section>
     </>

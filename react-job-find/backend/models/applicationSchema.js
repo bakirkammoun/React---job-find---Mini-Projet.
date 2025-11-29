@@ -35,6 +35,14 @@ const applicationSchema = new mongoose.Schema({
       required: true,
     },
   },
+  profileImage: {
+    public_id: {
+      type: String,
+    },
+    url: {
+      type: String,
+    },
+  },
   applicantID: {
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -58,6 +66,11 @@ const applicationSchema = new mongoose.Schema({
       enum: ["Employer"],
       required: true,
     },
+  },
+  status: {
+    type: String,
+    enum: ["Pending", "Accepted", "Rejected"],
+    default: "Pending",
   },
 });
 

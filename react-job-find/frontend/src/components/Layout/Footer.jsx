@@ -1,69 +1,81 @@
-import React, { useContext } from 'react';
+import React, { useContext } from "react";
 import { Context } from "../../main";
 import { Link } from "react-router-dom";
-import { FaGithub, FaLinkedin } from "react-icons/fa";
-import { SiLeetcode } from "react-icons/si";
+import { FaGithub, FaLinkedin, FaDribbble } from "react-icons/fa";
 import { RiInstagramFill } from "react-icons/ri";
 
+const quickLinks = [
+  { label: "Home", to: "/" },
+  { label: "All Jobs", to: "/job/getall" },
+  { label: "My Applications", to: "/applications/me" },
+  { label: "Post a Job", to: "/job/post", employerOnly: true },
+];
+
+const socialLinks = [
+  { label: "GitHub", to: "https://github.com", icon: <FaGithub /> },
+  { label: "LinkedIn", to: "https://www.linkedin.com", icon: <FaLinkedin /> },
+  { label: "Dribbble", to: "https://dribbble.com", icon: <FaDribbble /> },
+  { label: "Instagram", to: "https://www.instagram.com", icon: <RiInstagramFill /> },
+];
+
 function Footer() {
-  const { isAuthorized } = useContext(Context);
+  const { isAuthorized, user } = useContext(Context);
+
+  if (!isAuthorized) return null;
+
   return (
-    <footer className={isAuthorized ? "footerShow" : "footerHide"}>
-      <div>&copy; All Rights Reserved by Bakir et Iheb.</div>
-      <div>
-        <Link to={'https://github.com'} target='github'><FaGithub /></Link>
-        <Link to={'https://leetcode.com'} target='leetcode'><SiLeetcode /></Link>
-        <Link to={'https://www.linkedin.com'} target='linkedin'><FaLinkedin /></Link>
-        <Link to={'https://www.instagram.com'} target='instagram'><RiInstagramFill /></Link>
+    <footer className="footer">
+      <div className="footer__grid">
+        <div>
+          <Link to="/" className="footer__brand">
+            <img src="/logos.png" alt="CareerConnect logo" />
+            <span>CareerConnect</span>
+          </Link>
+          <p>
+            Craft your next career step with curated opportunities, modern tools,
+            and a community built for ambitious talent.
+          </p>
+          <div className="footer__social">
+            {socialLinks.map((link) => (
+              <a key={link.label} href={link.to} target="_blank" rel="noreferrer">
+                {link.icon}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h4>Quick Links</h4>
+          <ul>
+            {quickLinks.map((link) => {
+              if (link.employerOnly && user?.role !== "Employer") return null;
+              return (
+                <li key={link.label}>
+                  <Link to={link.to}>{link.label}</Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        <div className="footer__newsletter">
+          <h4>Stay in the loop</h4>
+          <p>Get curated vacancies and product updates once a week.</p>
+          <form>
+            <input type="email" placeholder="Your email address" required />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
       </div>
-      
-      {/* Formulaire de contact */}
-      <div className="contact-form">
-        <form>
-          <label htmlFor="name">Nom:</label>
-          <input type="text" id="name" name="name" placeholder="Votre nom" required />
 
-          <label htmlFor="email">Email:</label>
-          <input type="email" id="email" name="email" placeholder="Votre email" required />
-
-          <label htmlFor="message">Message:</label>
-          <textarea id="message" name="message" placeholder="Votre message" rows="4" required></textarea>
-
-          <button type="submit">Envoyer</button>
-        </form>
+      <div className="footer__bottom">
+        <span>© {new Date().getFullYear()} CareerConnect. All rights reserved.</span>
+        <div className="footer__legal">
+          <Link to="#">Privacy</Link>
+          <Link to="#">Terms</Link>
+          <Link to="#">Support</Link>
+        </div>
       </div>
-
-      <style jsx>{`
-        
-        .contact-form h3 {
-          margin-bottom: 15px;
-        }
-        .contact-form label {
-          display: block;
-          margin: 10px 0 5px;
-        }
-        .contact-form input,
-        .contact-form textarea {
-          width: 100%;
-          padding: 8px;
-          margin-bottom: 10px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-        }
-        .contact-form button {
-          background-color: #ffb700;
-          color: white;
-          padding: 10px 20px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-        .contact-form button:hover {
-          background-color: white;
-           
-          color:#ffb700 ;
-        }
-      `}</style>
     </footer>
   );
 }

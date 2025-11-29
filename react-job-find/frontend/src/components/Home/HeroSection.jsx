@@ -1,7 +1,11 @@
-import React from "react";
-import { FaBuilding, FaSuitcase, FaUsers, FaUserPlus } from "react-icons/fa";
+import React, { useState } from "react";
+import { FaBuilding, FaSuitcase, FaUsers, FaUserPlus, FaSearch } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
   const details = [
     {
       id: 1,
@@ -28,18 +32,47 @@ const HeroSection = () => {
       icon: <FaUserPlus />,
     },
   ];
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/job/getall?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate("/job/getall");
+    }
+  };
+
   return (
     <>
       <div className="heroSection">
         <div className="container">
           <div className="title">
-            <h1>Find a job that <h1>suits</h1></h1>
-            <h1>your interests and <h1>skills</h1></h1>
+            <h1>
+              Find a job that <span className="highlight">suits</span>
+            </h1>
+            <h1>
+              your interests and <span className="highlight">skills</span>
+            </h1>
             <p>
               Discover job opportunities that match your skills and passions.
               Connect with employers seeking talent like yours for rewarding
               careers.
             </p>
+            <form className="heroSearch" onSubmit={handleSearch}>
+              <div className="heroSearch__wrapper">
+                <FaSearch className="heroSearch__icon" />
+                <input
+                  type="text"
+                  placeholder="Search for jobs, companies, or skills..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="heroSearch__input"
+                />
+                <button type="submit" className="heroSearch__button">
+                  Search Jobs
+                </button>
+              </div>
+            </form>
           </div>
           <div className="image">
             <img src="/imhome.jpg" alt="hero" />

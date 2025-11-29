@@ -1,135 +1,130 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import { Context } from "../../main";
 
 const JobDetails = () => {
   const { id } = useParams();
-  const [job, setJob] = useState({});
+  const [job, setJob] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigateTo = useNavigate();
   const { isAuthorized, user } = useContext(Context);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:4000/api/v1/job/${id}`, {
-        withCredentials: true,
-      })
-      .then((res) => {
+    const fetchJob = async () => {
+      try {
+        const res = await axios.get(`http://localhost:4000/api/v1/job/${id}`, {
+          withCredentials: true,
+        });
         setJob(res.data.job);
-      })
-      .catch((error) => {
+      } catch (error) {
         navigateTo("/notfound");
-      });
-  }, [id]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchJob();
+  }, [id, navigateTo]);
+
+  const salaryText = useMemo(() => {
+    if (!job) return "—";
+    if (job.fixedSalary) return `$${job.fixedSalary}`;
+    if (job.salaryFrom && job.salaryTo)
+      return `$${job.salaryFrom} - $${job.salaryTo}`;
+    return "Salary not specified";
+  }, [job]);
+
+  const postedOn = useMemo(() => {
+    if (!job?.jobPostedOn) return "Date not available";
+    const date = new Date(job.jobPostedOn);
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }, [job]);
 
   if (!isAuthorized) {
     navigateTo("/login");
   }
 
+  if (isLoading) {
+    return (
+      <section className="jobDetail page">
+        <div className="container jobDetail__loading">Loading...</div>
+      </section>
+    );
+  }
+
+  if (!job) {
+    return null;
+  }
+
   return (
-    <section style={styles.jobDetail}>
-      <div style={styles.container}>
-        <h3 style={styles.heading}>Job Details</h3>
-        <div style={styles.banner}>
-          <p>
-            Title: <span style={styles.jobText}>{job.title}</span>
-          </p>
-          <p>
-            Category: <span style={styles.jobText}>{job.category}</span>
-          </p>
-          <p>
-            Country: <span style={styles.jobText}>{job.country}</span>
-          </p>
-          <p>
-            City: <span style={styles.jobText}>{job.city}</span>
-          </p>
-          <p>
-            Location: <span style={styles.jobText}>{job.location}</span>
-          </p>
-          <p>
-            Description: <span style={styles.jobText}>{job.description}</span>
-          </p>
-          <p>
-            Job Posted On: <span style={styles.jobText}>{job.jobPostedOn}</span>
-          </p>
-          <p>
-            Salary:{" "}
-            {job.fixedSalary ? (
-              <span style={styles.jobText}>{job.fixedSalary}</span>
-            ) : (
-              <span style={styles.jobText}>
-                {job.salaryFrom} - {job.salaryTo}
-              </span>
+    <section className="jobDetail page">
+      <div className="container">
+        <div className="jobDetail__hero">
+          <p>Opportunity overview</p>
+          <h1>{job.title}</h1>
+          <span>
+            {job.category} • {job.country}, {job.city}
+          </span>
+        </div>
+
+        <div className="jobDetail__content">
+          <article className="jobDetail__card">
+            <div className="jobDetail__grid">
+              <div>
+                <label>Category</label>
+                <p>{job.category || "—"}</p>
+              </div>
+              <div>
+                <label>Job Type</label>
+                <p>{job.jobType || "Flexible"}</p>
+              </div>
+              <div>
+                <label>Salary</label>
+                <p>{salaryText}</p>
+              </div>
+              <div>
+                <label>Posted On</label>
+                <p>{postedOn}</p>
+              </div>
+              <div>
+                <label>Country</label>
+                <p>{job.country || "—"}</p>
+              </div>
+              <div>
+                <label>City</label>
+                <p>{job.city || "—"}</p>
+              </div>
+            </div>
+
+            <div className="jobDetail__description">
+              <label>Description</label>
+              <p>{job.description || "No description provided."}</p>
+            </div>
+
+            <div className="jobDetail__description">
+              <label>Location</label>
+              <p>{job.location || "Flexible / Remote"}</p>
+            </div>
+
+            {user?.role !== "Employer" && (
+              <div className="jobDetail__cta">
+                <div>
+                  <p>Ready to apply?</p>
+                  <span>Attach your CV and send your best pitch.</span>
+                </div>
+                <Link to={`/application/${job._id}`}>Apply now</Link>
+              </div>
             )}
-          </p>
-          {user && user.role === "Employer" ? (
-            <></>
-          ) : (
-            <Link style={styles.applyButton} to={`/application/${job._id}`}>
-              Apply Now
-            </Link>
-          )}
+          </article>
         </div>
       </div>
     </section>
   );
-};
-
-const styles = {
-  jobDetail: {
-    backgroundImage: "url('/background.jpg')", // Ajouter l'image de fond ici
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    minHeight: "100vh",
-    padding: "50px 0",
-    fontFamily: "'Arial', sans-serif",
-  },
-  container: {
-    maxWidth: "800px",
-    margin: "0 auto",
-    padding: "20px",
-  },
-  heading: {
-    fontSize: "50px",
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-    marginBottom: "20px",
-    textTransform: "uppercase",
-    letterSpacing: "2px",
-  },
-  banner: {
-    backgroundColor: "rgba(0, 0, 0, 0.9)", // Filtre sombre appliqué ici
-    padding: "20px",
-    borderRadius: "20px",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-    color: "white",
-    transition: "background-color 0.3s ease",
-  },
-  jobText: {
-    color: "#FFFFFF",
-  },
-  applyButton: {
-    display: "inline-block",
-    textDecoration: "none",
-    backgroundColor: "#ffb700",
-    color: "white",
-    padding: "12px 24px",
-    borderRadius: "10px",
-    textAlign: "center",
-    fontSize: "16px",
-    fontWeight: "bold",
-    transition: "all 0.3s ease",
-    marginTop: "20px",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.4)",
-  },
-};
-
-styles.applyButton[":hover"] = {
-  backgroundColor: "#e0a000",
-  transform: "scale(1.05)",
-  boxShadow: "0 6px 12px rgba(0, 0, 0, 0.4)",
 };
 
 export default JobDetails;

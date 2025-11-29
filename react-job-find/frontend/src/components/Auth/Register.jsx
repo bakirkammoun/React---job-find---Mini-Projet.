@@ -50,80 +50,107 @@ const Register = () => {
 
   return (
     <>
-      <section className="authPage">
-        <div className="container">
-          <div className="header">
-            <img src="/careerconnect-black.png" alt="logo" />
-            <h3>Create a new account</h3>
+      <section className="authSplit authSplit--bg">
+        <div className="authSplit__card">
+          <div className="authSplit__header">
+            <img src="/careerconnect-black.png" alt="CareerConnect" />
+            <div>
+              <p className="eyebrow">Créer un compte</p>
+              <h2>Rejoignez CareerConnect !</h2>
+              <span>Créez votre compte et commencez votre recherche d'emploi dès aujourd'hui.</span>
+            </div>
           </div>
-          <form>
-            <div className="inputTag">
-              <label>Register As</label>
-              <div>
-                <select value={role} onChange={(e) => setRole(e.target.value)}>
-                  <option value="">Select Role</option>
-                  <option value="Employer">Employer</option>
-                  <option value="Job Seeker">Job Seeker</option>
+
+          <form className="authSplit__form" onSubmit={handleRegister}>
+            <div className="inputTag inputTag--modern">
+              <label>S'inscrire en tant que</label>
+              <div className="inputTag__inner">
+                <span className="inputTag__icon">
+                  <FaRegUser />
+                </span>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                >
+                  <option value="">Choisir un rôle</option>
+                  <option value="Job Seeker">Candidat</option>
+                  <option value="Employer">Recruteur</option>
                 </select>
-                <FaRegUser />
               </div>
             </div>
-            <div className="inputTag">
-              <label>Name</label>
-              <div>
+
+            <div className="inputTag inputTag--modern">
+              <label>Nom complet</label>
+              <div className="inputTag__inner">
+                <span className="inputTag__icon">
+                  <FaPencilAlt />
+                </span>
                 <input
                   type="text"
-                  placeholder="Enter your name"
+                  placeholder="Votre nom complet"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  required
                 />
-                <FaPencilAlt />
               </div>
             </div>
-            <div className="inputTag">
-              <label>Email Address</label>
-              <div>
+
+            <div className="inputTag inputTag--modern">
+              <label>Adresse e-mail</label>
+              <div className="inputTag__inner">
+                <span className="inputTag__icon">
+                  <MdOutlineMailOutline />
+                </span>
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="prenom.nom@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
-                <MdOutlineMailOutline />
               </div>
             </div>
-            <div className="inputTag">
-              <label>Phone Number</label>
-              <div>
+
+            <div className="inputTag inputTag--modern">
+              <label>Numéro de téléphone</label>
+              <div className="inputTag__inner">
+                <span className="inputTag__icon">
+                  <FaPhoneFlip />
+                </span>
                 <input
-                  type="number"
-                  placeholder="Enter your phone"
+                  type="tel"
+                  placeholder="+33 6 12 34 56 78"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  required
                 />
-                <FaPhoneFlip />
               </div>
             </div>
-            <div className="inputTag">
-              <label>Password</label>
-              <div>
+
+            <div className="inputTag inputTag--modern">
+              <label>Mot de passe</label>
+              <div className="inputTag__inner">
+                <span className="inputTag__icon">
+                  <RiLock2Fill />
+                </span>
                 <input
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
-                <RiLock2Fill />
               </div>
             </div>
-            <button type="submit" onClick={handleRegister}>
-              Register
-            </button>
-            <Link to={"/login"}>Login Now</Link>
+
+            <button type="submit">S'inscrire</button>
           </form>
-        </div>
-        <div className="banner">
-          <img src="/register.jpg" alt="login" />
+
+          <p className="authSplit__foot">
+            Vous avez déjà un compte ?{" "}
+            <Link to={"/login"}>Se connecter</Link>
+          </p>
         </div>
       </section>
     </>

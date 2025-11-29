@@ -15,24 +15,70 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Resume File Required!", 400));
   }
 
-  const { resume } = req.files;
-  const allowedFormats = ["image/png", "image/jpeg", "image/webp"];
-  if (!allowedFormats.includes(resume.mimetype)) {
+  const { resume, profileImage } = req.files;
+  if (!resume) {
+    return next(new ErrorHandler("Resume File Required!", 400));
+  }
+
+  const resumeAllowedFormats = [
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "application/pdf",
+  ];
+  if (!resumeAllowedFormats.includes(resume.mimetype)) {
     return next(
-      new ErrorHandler("Invalid file type. Please upload a PNG file.", 400)
+      new ErrorHandler(
+        "Invalid file type. Please upload a PDF or image (PNG/JPG/WEBP).",
+        400
+      )
     );
   }
-  const cloudinaryResponse = await cloudinary.uploader.upload(
-    resume.tempFilePath
+  const resumeUploadResponse = await cloudinary.uploader.upload(
+    resume.tempFilePath,
+    {
+      resource_type: "auto",
+      folder: "job-applications/resumes",
+    }
   );
 
-  if (!cloudinaryResponse || cloudinaryResponse.error) {
+  if (!resumeUploadResponse || resumeUploadResponse.error) {
     console.error(
       "Cloudinary Error:",
-      cloudinaryResponse.error || "Unknown Cloudinary error"
+      resumeUploadResponse.error || "Unknown Cloudinary error"
     );
     return next(new ErrorHandler("Failed to upload Resume to Cloudinary", 500));
   }
+
+  let profileImageResponse = null;
+  if (profileImage) {
+    const profileAllowedFormats = ["image/png", "image/jpeg", "image/webp"];
+    if (!profileAllowedFormats.includes(profileImage.mimetype)) {
+      return next(
+        new ErrorHandler(
+          "Invalid profile image. Please upload PNG/JPG/WEBP only.",
+          400
+        )
+      );
+    }
+    profileImageResponse = await cloudinary.uploader.upload(
+      profileImage.tempFilePath,
+      {
+        folder: "job-applications/profile-images",
+      }
+    );
+
+    if (!profileImageResponse || profileImageResponse.error) {
+      console.error(
+        "Cloudinary Error:",
+        profileImageResponse.error || "Unknown Cloudinary error"
+      );
+      return next(
+        new ErrorHandler("Failed to upload profile image to Cloudinary", 500)
+      );
+    }
+  }
+
   const { name, email, coverLetter, phone, address, jobId } = req.body;
   const applicantID = {
     user: req.user._id,
@@ -50,11 +96,7 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
     user: jobDetails.postedBy,
     role: "Employer",
   };
-  if (
-    !name ||
-   
-    !resume
-  ) {
+  if (!name || !email || !coverLetter || !phone || !address) {
     return next(new ErrorHandler("Please fill all fields.", 400));
   }
   const application = await Application.create({
@@ -66,9 +108,15 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
     applicantID,
     employerID,
     resume: {
-      public_id: cloudinaryResponse.public_id,
-      url: cloudinaryResponse.secure_url,
+      public_id: resumeUploadResponse.public_id,
+      url: resumeUploadResponse.secure_url,
     },
+    profileImage: profileImageResponse
+      ? {
+          public_id: profileImageResponse.public_id,
+          url: profileImageResponse.secure_url,
+        }
+      : undefined,
   });
   res.status(200).json({
     success: true,
@@ -128,6 +176,50 @@ export const jobseekerDeleteApplication = catchAsyncErrors(
     res.status(200).json({
       success: true,
       message: "Application Deleted!",
+    });
+  }
+);
+
+export const updateApplicationStatus = catchAsyncErrors(
+  async (req, res, next) => {
+    const { role, _id } = req.user;
+    if (role === "Job Seeker") {
+      return next(
+        new ErrorHandler("Job Seeker not allowed to access this resource.", 400)
+      );
+    }
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = ["Pending", "Accepted", "Rejected"];
+    if (!allowedStatuses.includes(status)) {
+      return next(new ErrorHandler("Invalid status option provided.", 400));
+    }
+
+    const application = await Application.findById(id);
+    if (!application) {
+      return next(new ErrorHandler("Application not found!", 404));
+    }
+
+    if (application.employerID.user.toString() !== _id.toString()) {
+      return next(
+        new ErrorHandler("You are not allowed to update this application.", 403)
+      );
+    }
+
+    application.status = status;
+    await application.save();
+
+    res.status(200).json({
+      success: true,
+      message:
+        status === "Accepted"
+          ? "Application accepted!"
+          : status === "Rejected"
+          ? "Application rejected!"
+          : "Application status updated!",
+      application,
     });
   }
 );

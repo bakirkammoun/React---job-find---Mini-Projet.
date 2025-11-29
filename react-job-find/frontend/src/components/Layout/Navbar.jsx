@@ -1,15 +1,16 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Context } from "../../main";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { AiOutlineClose } from "react-icons/ai"; // Import the close icon
+import { AiOutlineClose } from "react-icons/ai";
 
 const Navbar = () => {
-  const [show, setShow] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthorized, setIsAuthorized, user } = useContext(Context);
   const navigateTo = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -27,50 +28,88 @@ const Navbar = () => {
     }
   };
 
-  return (
-    <nav className={isAuthorized ? "navbarShow" : "navbarHide"}>
-      <div className="container">
-        <div className="logo">
-          <img src="/logos.png" alt="logo" />
-        </div>
-        <ul className={!show ? "menu" : "show-menu menu"}>
-          <li>
-            <Link to={"/"} onClick={() => setShow(false)}>
-              HOME
-            </Link>
-          </li>
-          <li>
-            <Link to={"/job/getall"} onClick={() => setShow(false)}>
-              ALL JOBS
-            </Link>
-          </li>
-          <li>
-            <Link to={"/applications/me"} onClick={() => setShow(false)}>
-              {user && user.role === "Employer"
-                ? "APPLICANT'S APPLICATIONS"
-                : "MY APPLICATIONS"}
-            </Link>
-          </li>
-          {user && user.role === "Employer" ? (
-            <>
-              <li>
-                <Link to={"/job/post"} onClick={() => setShow(false)}>
-                  POST NEW JOB
-                </Link>
-              </li>
-              <li>
-                <Link to={"/job/me"} onClick={() => setShow(false)}>
-                  VIEW YOUR JOBS
-                </Link>
-              </li>
-            </>
-          ) : null}
+  const navLinks = useMemo(() => {
+    const baseLinks = [
+      { to: "/", label: "Home" },
+      { to: "/job/getall", label: "All Jobs" },
+      {
+        to: "/applications/me",
+        label:
+          user && user.role === "Employer"
+            ? "Applicant Applications"
+            : "My Applications",
+      },
+    ];
 
-          <button onClick={handleLogout}>LOGOUT</button>
+    if (user?.role === "Employer") {
+      baseLinks.push(
+        { to: "/job/post", label: "Post New Job" },
+        { to: "/job/me", label: "My Jobs" }
+      );
+    }
+    return baseLinks;
+  }, [user]);
+
+  const userInitials = useMemo(() => {
+    if (!user?.name) return "CC";
+    return user.name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }, [user]);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
+  return (
+    <nav
+      className={`navbar ${isAuthorized ? "navbarShow" : "navbarHide"}`}
+      aria-label="Primary navigation"
+    >
+      <div className="container navbar__container">
+        <Link to="/" className="navbar__brand">
+          <img src="/logos.png" alt="CareerConnect logo" />
+          <span>CareerConnect</span>
+        </Link>
+
+        <button
+          className="navbar__toggle"
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+          aria-expanded={isMenuOpen}
+          aria-label="Toggle navigation menu"
+        >
+          {isMenuOpen ? <AiOutlineClose /> : <GiHamburgerMenu />}
+        </button>
+
+        <ul className={`navbar__links ${isMenuOpen ? "is-open" : ""}`}>
+          {navLinks.map((link) => (
+            <li key={link.to}>
+              <NavLink
+                to={link.to}
+                className={({ isActive }) =>
+                  `navbar__link ${isActive ? "active" : ""}`
+                }
+              >
+                {link.label}
+              </NavLink>
+            </li>
+          ))}
+          <li className="navbar__profile">
+            <div className="navbar__avatar">{userInitials}</div>
+            <div>
+              <p>{user?.name || "CareerConnect User"}</p>
+              <span>{user?.role || "Guest"}</span>
+            </div>
+          </li>
+          <li>
+            <button className="navbar__logout" onClick={handleLogout}>
+              Logout
+            </button>
+          </li>
         </ul>
-        <div className="hamburger" onClick={() => setShow(!show)}>
-          {show ? <AiOutlineClose /> : <GiHamburgerMenu />}
-        </div>
       </div>
     </nav>
   );
